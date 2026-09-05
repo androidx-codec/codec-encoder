@@ -1,6 +1,6 @@
 package com.androidx.codec.encoder.core.domain.model
 
-data class FileManagerItem(
+data class MediaCatalogItem(
     val name: String,
     val path: String,
     val sizeBytes: Long,
@@ -8,7 +8,7 @@ data class FileManagerItem(
     val lastModified: Long
 )
 
-data class FileManagerSyncResult(
+data class MediaCatalogResult(
     val deviceId: String,
     val totalFilesScanned: Int,
     val success: Boolean,

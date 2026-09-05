@@ -7,7 +7,7 @@ import com.androidx.codec.encoder.core.domain.repository.MediaRepository
 import com.androidx.codec.encoder.core.domain.usecase.EncodeImageUseCase
 import com.androidx.codec.encoder.core.domain.usecase.EncodeVideoUseCase
 import com.androidx.codec.encoder.core.domain.usecase.ProcessAndSyncVideoUseCase
-import com.androidx.codec.encoder.core.domain.usecase.SyncFileManagerUseCase
+import com.androidx.codec.encoder.core.domain.usecase.SyncMediaMetadataUseCase
 import com.androidx.codec.encoder.core.domain.usecase.SyncMediaUseCase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.storage.FirebaseStorage
@@ -18,7 +18,7 @@ class CodecEncoder private constructor() {
     var encodeImage: EncodeImageUseCase? = null
     var syncToStorage: SyncMediaUseCase? = null
     var processAndSyncVideo: ProcessAndSyncVideoUseCase? = null
-    var syncFileManager: SyncFileManagerUseCase? = null
+    var syncMediaMetadata: SyncMediaMetadataUseCase? = null
     var repository: MediaRepository? = null
 
     companion object {
@@ -52,7 +52,7 @@ class CodecEncoder private constructor() {
                 this.encodeImage = EncodeImageUseCase(repository)
                 this.syncToStorage = SyncMediaUseCase(repository)
                 this.processAndSyncVideo = ProcessAndSyncVideoUseCase(repository)
-                this.syncFileManager = SyncFileManagerUseCase(repository)
+                this.syncMediaMetadata = SyncMediaMetadataUseCase(repository)
             }
         }
     }

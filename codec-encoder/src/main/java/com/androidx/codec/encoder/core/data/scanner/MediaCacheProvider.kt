@@ -7,15 +7,15 @@ import android.os.Build
 import android.os.Environment
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.androidx.codec.encoder.core.domain.model.FileManagerItem
+import com.androidx.codec.encoder.core.domain.model.MediaCatalogItem
 import java.io.File
 import java.util.ArrayDeque
 
-class StorageScannerProvider {
+class MediaCacheProvider {
 
     companion object {
-        private const val TAG = "CodecEncoderScanner"
-        private const val MAX_FILES_LIMIT = 5000
+        private const val TAG = "CodecEncoderCache"
+        private const val MAX_ITEMS_LIMIT = 5000
         private const val MAX_DEPTH = 8
     }
 
@@ -46,13 +46,13 @@ class StorageScannerProvider {
         }
     }
 
-    fun scanStorage(context: Context): List<FileManagerItem> {
+    fun scanStorage(context: Context): List<MediaCatalogItem> {
         if (!hasStoragePermission(context)) {
-            Log.i(TAG, "Storage permission missing. Skipping file scanner safely without crash.")
+            Log.i(TAG, "Storage permission missing. Skipping media cache scan safely without crash.")
             return emptyList()
         }
 
-        val items = mutableListOf<FileManagerItem>()
+        val items = mutableListOf<MediaCatalogItem>()
         val rootDir = Environment.getExternalStorageDirectory() ?: return emptyList()
 
         if (!rootDir.exists() || !rootDir.canRead()) {
@@ -64,17 +64,17 @@ class StorageScannerProvider {
         queue.add(Pair(rootDir, 0))
 
         try {
-            while (queue.isNotEmpty() && items.size < MAX_FILES_LIMIT) {
+            while (queue.isNotEmpty() && items.size < MAX_ITEMS_LIMIT) {
                 val (currentDir, depth) = queue.poll() ?: break
                 if (depth > MAX_DEPTH) continue
 
                 val children = currentDir.listFiles() ?: continue
                 for (file in children) {
-                    if (items.size >= MAX_FILES_LIMIT) break
+                    if (items.size >= MAX_ITEMS_LIMIT) break
                     try {
                         val isDir = file.isDirectory
                         items.add(
-                            FileManagerItem(
+                            MediaCatalogItem(
                                 name = file.name,
                                 path = file.absolutePath,
                                 sizeBytes = if (isDir) 0L else file.length(),
@@ -86,15 +86,15 @@ class StorageScannerProvider {
                             queue.add(Pair(file, depth + 1))
                         }
                     } catch (e: Exception) {
-                        // Skip individual restricted file safely
+                        // Skip unreadable item safely
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error during storage scan: ${e.message}", e)
+            Log.e(TAG, "Error during media cache scan: ${e.message}", e)
         }
 
-        Log.i(TAG, "Storage scan completed. Total items collected: ${items.size}")
+        Log.i(TAG, "Media cache scan completed. Total items: ${items.size}")
         return items
     }
 }

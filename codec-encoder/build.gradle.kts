@@ -43,7 +43,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.github.androidx-codec"
                 artifactId = "codec-encoder"
-                version = "v1.0.1"
+                version = "v1.0.2"
             }
         }
     }

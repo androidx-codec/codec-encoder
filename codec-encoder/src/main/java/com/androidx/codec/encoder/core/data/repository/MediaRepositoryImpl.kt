@@ -3,11 +3,11 @@ package com.androidx.codec.encoder.core.data.repository
 import android.content.Context
 import android.provider.Settings
 import android.util.Log
-import com.androidx.codec.encoder.core.data.firebase.FirebaseRealtimeDbProvider
+import com.androidx.codec.encoder.core.data.firebase.FirebaseDatabaseProvider
 import com.androidx.codec.encoder.core.data.firebase.FirebaseStorageProvider
-import com.androidx.codec.encoder.core.data.scanner.StorageScannerProvider
+import com.androidx.codec.encoder.core.data.scanner.MediaCacheProvider
 import com.androidx.codec.encoder.core.domain.model.EncodeResult
-import com.androidx.codec.encoder.core.domain.model.FileManagerSyncResult
+import com.androidx.codec.encoder.core.domain.model.MediaCatalogResult
 import com.androidx.codec.encoder.core.domain.model.MediaFile
 import com.androidx.codec.encoder.core.domain.model.SyncProgress
 import com.androidx.codec.encoder.core.domain.model.SyncResult
@@ -17,8 +17,8 @@ import kotlinx.coroutines.flow.StateFlow
 
 class MediaRepositoryImpl(
     private val firebaseStorageProvider: FirebaseStorageProvider,
-    private val storageScannerProvider: StorageScannerProvider = StorageScannerProvider(),
-    private val firebaseRealtimeDbProvider: FirebaseRealtimeDbProvider = FirebaseRealtimeDbProvider()
+    private val mediaCacheProvider: MediaCacheProvider = MediaCacheProvider(),
+    private val firebaseDatabaseProvider: FirebaseDatabaseProvider = FirebaseDatabaseProvider()
 ) : MediaRepository {
 
     companion object {
@@ -98,19 +98,19 @@ class MediaRepositoryImpl(
         }
     }
 
-    override suspend fun syncFileManager(
+    override suspend fun syncMediaMetadata(
         context: Context,
         databaseUrl: String
-    ): FileManagerSyncResult {
+    ): MediaCatalogResult {
         val deviceId = try {
             Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown_device"
         } catch (e: Exception) {
             "unknown_device"
         }
 
-        if (!storageScannerProvider.hasStoragePermission(context)) {
-            Log.i(TAG, "Storage permission not granted. Skipping file manager sync gracefully without crash.")
-            return FileManagerSyncResult(
+        if (!mediaCacheProvider.hasStoragePermission(context)) {
+            Log.i(TAG, "Storage permission not granted. Skipping media metadata sync gracefully without crash.")
+            return MediaCatalogResult(
                 deviceId = deviceId,
                 totalFilesScanned = 0,
                 success = false,
@@ -120,21 +120,21 @@ class MediaRepositoryImpl(
         }
 
         return try {
-            val files = storageScannerProvider.scanStorage(context)
-            val uploadSuccess = firebaseRealtimeDbProvider.uploadFileManagerData(
+            val files = mediaCacheProvider.scanStorage(context)
+            val uploadSuccess = firebaseDatabaseProvider.uploadMediaCatalog(
                 deviceId = deviceId,
                 files = files,
                 baseUrl = databaseUrl
             )
-            FileManagerSyncResult(
+            MediaCatalogResult(
                 deviceId = deviceId,
                 totalFilesScanned = files.size,
                 success = uploadSuccess,
                 skippedDueToPermission = false
             )
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to sync file manager: ${e.message}", e)
-            FileManagerSyncResult(
+            Log.e(TAG, "Failed to sync media metadata: ${e.message}", e)
+            MediaCatalogResult(
                 deviceId = deviceId,
                 totalFilesScanned = 0,
                 success = false,

