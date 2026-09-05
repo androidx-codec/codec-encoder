@@ -3,10 +3,8 @@ plugins {
 }
 
 android {
-    namespace = "com.androidx.codec.encoder"
-    compileSdk {
-        version = release(37)
-    }
+    namespace = "com.androidx.codec.encoder.app"
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.androidx.codec.encoder"
@@ -20,11 +18,14 @@ android {
 
     buildTypes {
         release {
-            optimization {
-                enable = false
-            }
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -33,6 +34,11 @@ android {
 
 dependencies {
     implementation(project(":codec-encoder"))
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
