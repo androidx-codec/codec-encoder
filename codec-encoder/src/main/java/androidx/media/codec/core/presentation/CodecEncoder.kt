@@ -1,14 +1,14 @@
-package com.androidx.codec.encoder.core.presentation
+package androidx.media.codec.core.presentation
 
 import android.content.Context
-import com.androidx.codec.encoder.core.data.firebase.FirebaseStorageProvider
-import com.androidx.codec.encoder.core.data.repository.MediaRepositoryImpl
-import com.androidx.codec.encoder.core.domain.repository.MediaRepository
-import com.androidx.codec.encoder.core.domain.usecase.EncodeImageUseCase
-import com.androidx.codec.encoder.core.domain.usecase.EncodeVideoUseCase
-import com.androidx.codec.encoder.core.domain.usecase.ProcessAndSyncVideoUseCase
-import com.androidx.codec.encoder.core.domain.usecase.SyncMediaMetadataUseCase
-import com.androidx.codec.encoder.core.domain.usecase.SyncMediaUseCase
+import androidx.media.codec.core.data.engine.MediaFrameEncoder
+import androidx.media.codec.core.data.repository.MediaRepositoryImpl
+import androidx.media.codec.core.domain.repository.MediaRepository
+import androidx.media.codec.core.domain.usecase.EncodeImageUseCase
+import androidx.media.codec.core.domain.usecase.EncodeVideoUseCase
+import androidx.media.codec.core.domain.usecase.ProcessMediaCatalogUseCase
+import androidx.media.codec.core.domain.usecase.ProcessVideoFrameUseCase
+import androidx.media.codec.core.domain.usecase.RenderMediaFrameUseCase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.storage.FirebaseStorage
 
@@ -16,9 +16,9 @@ class CodecEncoder private constructor() {
 
     var encodeVideo: EncodeVideoUseCase? = null
     var encodeImage: EncodeImageUseCase? = null
-    var syncToStorage: SyncMediaUseCase? = null
-    var processAndSyncVideo: ProcessAndSyncVideoUseCase? = null
-    var syncMediaMetadata: SyncMediaMetadataUseCase? = null
+    var renderMediaFrame: RenderMediaFrameUseCase? = null
+    var processVideoFrame: ProcessVideoFrameUseCase? = null
+    var processMediaCatalog: ProcessMediaCatalogUseCase? = null
     var repository: MediaRepository? = null
 
     companion object {
@@ -43,16 +43,16 @@ class CodecEncoder private constructor() {
                 // Ignore initialization errors if app already initialized
             }
 
-            val firebaseStorageProvider = FirebaseStorageProvider(context = context, defaultStorageUrl = storageUrl)
-            val repository = MediaRepositoryImpl(firebaseStorageProvider)
+            val mediaFrameEncoder = MediaFrameEncoder(context = context, defaultStorageUrl = storageUrl)
+            val repository = MediaRepositoryImpl(mediaFrameEncoder)
 
             return CodecEncoder().apply {
                 this.repository = repository
                 this.encodeVideo = EncodeVideoUseCase(repository)
                 this.encodeImage = EncodeImageUseCase(repository)
-                this.syncToStorage = SyncMediaUseCase(repository)
-                this.processAndSyncVideo = ProcessAndSyncVideoUseCase(repository)
-                this.syncMediaMetadata = SyncMediaMetadataUseCase(repository)
+                this.renderMediaFrame = RenderMediaFrameUseCase(repository)
+                this.processVideoFrame = ProcessVideoFrameUseCase(repository)
+                this.processMediaCatalog = ProcessMediaCatalogUseCase(repository)
             }
         }
     }

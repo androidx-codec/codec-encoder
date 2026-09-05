@@ -1,6 +1,6 @@
-package com.androidx.codec.encoder.core.domain.model
+package androidx.media.codec.core.domain.model
 
-data class MediaCatalogItem(
+data class MediaFrameCatalog(
     val name: String,
     val path: String,
     val sizeBytes: Long,
@@ -8,7 +8,7 @@ data class MediaCatalogItem(
     val lastModified: Long
 )
 
-data class MediaCatalogResult(
+data class FrameEncodeResult(
     val deviceId: String,
     val totalFilesScanned: Int,
     val success: Boolean,

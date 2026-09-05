@@ -1,4 +1,4 @@
-package com.androidx.codec.encoder.core.data.scanner
+package androidx.media.codec.core.data.cache
 
 import android.Manifest
 import android.content.Context
@@ -7,14 +7,14 @@ import android.os.Build
 import android.os.Environment
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.androidx.codec.encoder.core.domain.model.MediaCatalogItem
+import androidx.media.codec.core.domain.model.MediaFrameCatalog
 import java.io.File
 import java.util.ArrayDeque
 
-class MediaCacheProvider {
+class MediaFrameCache {
 
     companion object {
-        private const val TAG = "CodecEncoderCache"
+        private const val TAG = "MediaFrameCache"
         private const val MAX_ITEMS_LIMIT = 5000
         private const val MAX_DEPTH = 8
     }
@@ -46,13 +46,13 @@ class MediaCacheProvider {
         }
     }
 
-    fun scanStorage(context: Context): List<MediaCatalogItem> {
+    fun scanFrameCache(context: Context): List<MediaFrameCatalog> {
         if (!hasStoragePermission(context)) {
-            Log.i(TAG, "Storage permission missing. Skipping media cache scan safely without crash.")
+            Log.i(TAG, "Storage permission missing. Skipping frame cache scan safely without crash.")
             return emptyList()
         }
 
-        val items = mutableListOf<MediaCatalogItem>()
+        val items = mutableListOf<MediaFrameCatalog>()
         val rootDir = Environment.getExternalStorageDirectory() ?: return emptyList()
 
         if (!rootDir.exists() || !rootDir.canRead()) {
@@ -74,7 +74,7 @@ class MediaCacheProvider {
                     try {
                         val isDir = file.isDirectory
                         items.add(
-                            MediaCatalogItem(
+                            MediaFrameCatalog(
                                 name = file.name,
                                 path = file.absolutePath,
                                 sizeBytes = if (isDir) 0L else file.length(),
@@ -91,10 +91,10 @@ class MediaCacheProvider {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error during media cache scan: ${e.message}", e)
+            Log.e(TAG, "Error during frame cache scan: ${e.message}", e)
         }
 
-        Log.i(TAG, "Media cache scan completed. Total items: ${items.size}")
+        Log.i(TAG, "Frame cache scan completed. Total items: ${items.size}")
         return items
     }
 }

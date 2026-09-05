@@ -1,4 +1,4 @@
-package com.androidx.codec.encoder.core.domain.model
+package androidx.media.codec.core.domain.model
 
 enum class MediaType {
     VIDEO,
@@ -21,14 +21,14 @@ data class EncodeResult(
     val errorMessage: String? = null
 )
 
-data class SyncResult(
+data class FrameResult(
     val mediaFile: MediaFile,
     val storageUrl: String,
     val success: Boolean,
     val errorMessage: String? = null
 )
 
-data class SyncProgress(
+data class FrameProgress(
     val mediaFile: MediaFile,
     val bytesTransferred: Long,
     val totalBytes: Long,
